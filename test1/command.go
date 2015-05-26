@@ -1,12 +1,5 @@
 package main
 
-import (
-	"fmt"
-	"strings"
-
-	"golang.org/x/crypto/ssh/terminal"
-)
-
 /*
  simple command line layer for making tab complete interactive CLIs
 
@@ -25,6 +18,13 @@ import (
 
 
 */
+
+import (
+	"fmt"
+	"strings"
+
+	"golang.org/x/crypto/ssh/terminal"
+)
 
 type Prompt interface {
 	String() string
@@ -47,23 +47,36 @@ type RootCommand struct {
 	Ctx *Context
 }
 
+// return single matching command if possible
 // search one level deep for a command
-func (c *Command) Find(name string) (*Command, error) {
-	matches := make([]*Command, 0)
-	for _, scmd := range c.SubCmd {
-		if scmd.Name == name {
-			return scmd, nil
-		}
-		if strings.HasPrefix(scmd.Name, name) {
-			matches = append(matches, scmd)
-		}
+// perform unique prefix matching
+func (c *Command) FindOne(name string) (*Command, error) {
+	matches, err := c.Find(name)
+	if err != nil {
+		return nil, err
 	}
 
 	if len(matches) == 1 {
 		return matches[0], nil
 	}
-
 	return nil, fmt.Errorf("cmd=%s: no such command %q", c.Name, name)
+}
+
+// return all matching commands
+// search one level deep for a command
+// perform unique prefix matching
+func (c *Command) Find(name string) ([]*Command, error) {
+	matches := make([]*Command, 0)
+	for _, scmd := range c.SubCmd {
+		if strings.HasPrefix(scmd.Name, name) {
+			matches = append(matches, scmd)
+		}
+	}
+	if len(matches) == 0 {
+		return nil, fmt.Errorf("no such match: %s", name)
+	}
+
+	return matches, nil
 }
 
 // find which command will be called to execute
@@ -79,10 +92,11 @@ func (c *RootCommand) FindCommand(line string) (*Command, error) {
 	scmd = c.Command
 	ret = scmd
 	for i := 0; i < len(fields); i++ {
-		tcmd, err := scmd.Find(fields[i])
+		tcmd, err := scmd.FindOne(fields[i])
 		if err != nil {
 			break
 		}
+
 		if tcmd != nil {
 			scmd = tcmd
 		}
@@ -126,6 +140,7 @@ type Command struct {
 	Description string // short one line description
 	Exec        ExecuteCommand
 
+	Parent *Command
 	SubCmd []*Command
 }
 
@@ -133,6 +148,7 @@ func (c *Command) Add(cmd *Command) error {
 	if c.SubCmd == nil {
 		c.SubCmd = make([]*Command, 0)
 	}
+	cmd.Parent = c
 	c.SubCmd = append(c.SubCmd, cmd)
 	return nil
 }

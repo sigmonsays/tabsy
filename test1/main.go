@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io"
 )
 
 type prompt struct {
@@ -22,11 +23,13 @@ func main() {
 	}
 	cli.Add(help)
 
+	// show
 	show := &Command{
 		Name:        "show",
 		Description: "top level show command, use ? for help",
 	}
 
+	// show profiles
 	profiles := &Command{
 		Name:        "profiles",
 		Description: "show connection profiles",
@@ -37,6 +40,7 @@ func main() {
 	}
 	show.Add(profiles)
 
+	// show cpu
 	cpu := &Command{
 		Name:        "cpu",
 		Description: "cpu utilization",
@@ -51,6 +55,7 @@ func main() {
 
 	prompt := &prompt{"/"}
 
+	// cd
 	cd := &Command{
 		Name:        "cd",
 		Description: "change current directory",
@@ -65,10 +70,31 @@ func main() {
 	}
 	cli.Add(cd)
 
+	// pwd
+	pwd := &Command{
+		Name:        "pwd",
+		Description: "print working directory",
+		Exec: func(ctx *Context) error {
+			fmt.Printf("%s\n", prompt.Path)
+			return nil
+		},
+	}
+	cli.Add(pwd)
+
+	// exit
+	exit := &Command{
+		Name: "exit",
+		Exec: func(ctx *Context) error {
+			return io.EOF
+		},
+	}
+	cli.Add(exit)
+
 	quit := make(chan bool, 0)
 
 	cli.InitTerm()
 	cli.Ctx.SetPrompt(prompt)
 	Loop(cli, quit)
 	cli.ReleaseTerm()
+	fmt.Println()
 }

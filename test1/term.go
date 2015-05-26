@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strings"
 	"text/tabwriter"
 
 	"golang.org/x/crypto/ssh/terminal"
@@ -92,10 +93,6 @@ Dance:
 		select {
 
 		case k := <-cli_keypress:
-			cmd, err := c.FindCommand(k.line)
-			if cmd == nil {
-				cmd = c.Command
-			}
 
 			if k.key == 0x03 {
 				fmt.Printf("\nQuit..\n")
@@ -104,10 +101,37 @@ Dance:
 				break Dance
 
 			} else if k.key == 0x9 { // TAB
+				res := &KeyResponse{"", 0, false}
 
-				k.response <- &KeyResponse{"", 0, false}
+				fields := strings.Fields(k.line)
+				prefix := fields[len(fields)-1]
+
+				cmd, err := c.FindCommand(k.line)
+				if err == nil {
+
+					if strings.HasPrefix(cmd.Name, prefix) && cmd.Name != prefix {
+						res.ok = true
+						p := cmd.Name[len(prefix):] + " "
+						res.newline += k.line + p
+						res.newpos += k.pos + len(p)
+					}
+
+					// fmt.Printf("cmd=%s fields=%s prefix=%s\n", cmd.Name, fields, prefix)
+
+					// list all sub commands
+					ls := []string{}
+					for _, cmd := range cmd.SubCmd {
+						ls = append(ls, cmd.Name)
+					}
+				}
+
+				k.response <- res
 
 			} else if k.key == 0x3f { // ?
+				cmd, err := c.FindCommand(k.line)
+				if cmd == nil {
+					cmd = c.Command
+				}
 
 				showHelp(cmd, err)
 
@@ -125,9 +149,11 @@ Dance:
 		case text := <-cli_text:
 
 			err = c.Dispatch(text)
-
 			if err == io.EOF {
 				break Dance
+			}
+			if err != nil {
+				fmt.Printf("ERROR: %s\n", err)
 			}
 			cli_ready <- true
 		}
