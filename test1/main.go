@@ -2,60 +2,73 @@ package main
 
 import (
 	"fmt"
-	"io"
-	"os"
-	"strings"
-
-	"golang.org/x/crypto/ssh/terminal"
 )
 
-var regularState *terminal.State
+type prompt struct {
+	Path string
+}
+
+func (p *prompt) String() string {
+	return fmt.Sprintf("%s > ", p.Path)
+}
 
 func main() {
-	oldState, err := terminal.MakeRaw(0)
-	if err != nil {
-		panic(err)
+	cli := NewCommandSet("test1")
+	cli.Description = "do something useful.."
+
+	help := &Command{
+		Name:        "help",
+		Description: "show help for commands",
 	}
-	regularState = oldState
+	cli.Add(help)
 
-	prompt := "> "
-	fmt.Printf("starting..\n")
-	t := terminal.NewTerminal(os.Stdin, prompt)
-	t.AutoCompleteCallback = handleKey
-
-	term(t, oldState)
-
-	fmt.Printf("exiting..\n")
-}
-
-func term(t *terminal.Terminal, oldState *terminal.State) {
-	defer terminal.Restore(0, oldState)
-
-	for {
-		text, err := t.ReadLine()
-		if err != nil {
-			if err == io.EOF {
-				// Quit without error on Ctrl^D
-				fmt.Println()
-				break
-			}
-			panic(err)
-		}
-
-		text = strings.Replace(text, " ", "", -1)
-		if text == "exit" || text == "quit" {
-			break
-		}
-
-		fmt.Printf("input: %s\n", text)
-
+	show := &Command{
+		Name:        "show",
+		Description: "top level show command, use ? for help",
 	}
-}
-func handleKey(line string, pos int, key rune) (newLine string, newPos int, ok bool) {
-	if key == 0x03 {
-		fmt.Println()
-		terminal.Restore(0, regularState)
-		os.Exit(0)
+
+	profiles := &Command{
+		Name:        "profiles",
+		Description: "show connection profiles",
+		Exec: func(ctx *Context) error {
+			fmt.Printf("profiles..\n")
+			return nil
+		},
 	}
-	return "", 0, false
+	show.Add(profiles)
+
+	cpu := &Command{
+		Name:        "cpu",
+		Description: "cpu utilization",
+		Exec: func(ctx *Context) error {
+			fmt.Printf("CPUs..\n")
+			return nil
+		},
+	}
+	show.Add(cpu)
+
+	cli.Add(show)
+
+	prompt := &prompt{"/"}
+
+	cd := &Command{
+		Name:        "cd",
+		Description: "change current directory",
+		Exec: func(ctx *Context) error {
+			path := ctx.Arg(0)
+			prompt.Path = path
+			ctx.SetPrompt(prompt)
+			fmt.Printf("cd %s\n", prompt.Path)
+
+			return nil
+		},
+	}
+	cli.Add(cd)
+
+	quit := make(chan bool, 0)
+
+	cli.InitTerm()
+	cli.Ctx.SetPrompt(prompt)
+	Loop(cli, quit)
+	cli.ReleaseTerm()
 }
