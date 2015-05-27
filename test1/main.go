@@ -3,6 +3,11 @@ package main
 import (
 	"fmt"
 	"io"
+	"io/ioutil"
+	"os"
+	"os/exec"
+
+	"github.com/sigmonsays/test/tab"
 )
 
 type prompt struct {
@@ -14,26 +19,29 @@ func (p *prompt) String() string {
 }
 
 func main() {
-	cli := NewCommandSet("test1")
+	cli := tab.NewCommandSet("test1")
 	cli.Description = "do something useful.."
 
-	help := &Command{
+	help := &tab.Command{
 		Name:        "help",
 		Description: "show help for commands",
+		Exec: func(ctx *tab.Context) error {
+			return nil
+		},
 	}
 	cli.Add(help)
 
 	// show
-	show := &Command{
+	show := &tab.Command{
 		Name:        "show",
 		Description: "top level show command, use ? for help",
 	}
 
 	// show profiles
-	profiles := &Command{
+	profiles := &tab.Command{
 		Name:        "profiles",
 		Description: "show connection profiles",
-		Exec: func(ctx *Context) error {
+		Exec: func(ctx *tab.Context) error {
 			fmt.Printf("profiles..\n")
 			return nil
 		},
@@ -41,11 +49,15 @@ func main() {
 	show.Add(profiles)
 
 	// show cpu
-	cpu := &Command{
+	cpu := &tab.Command{
 		Name:        "cpu",
 		Description: "cpu utilization",
-		Exec: func(ctx *Context) error {
-			fmt.Printf("CPUs..\n")
+		Exec: func(ctx *tab.Context) error {
+			buf, err := ioutil.ReadFile("/proc/loadavg")
+			if err != nil {
+				return err
+			}
+			fmt.Printf("%s\n", buf)
 			return nil
 		},
 	}
@@ -56,10 +68,10 @@ func main() {
 	prompt := &prompt{"/"}
 
 	// cd
-	cd := &Command{
+	cd := &tab.Command{
 		Name:        "cd",
 		Description: "change current directory",
-		Exec: func(ctx *Context) error {
+		Exec: func(ctx *tab.Context) error {
 			path := ctx.Arg(0)
 			prompt.Path = path
 			ctx.SetPrompt(prompt)
@@ -70,11 +82,29 @@ func main() {
 	}
 	cli.Add(cd)
 
+	// ls
+	ls := &tab.Command{
+		Name:        "ls",
+		Description: "list files",
+		Exec: func(ctx *tab.Context) error {
+			args := ctx.Args()
+			cmd := exec.Command("ls", args...)
+			cmd.Stdout = os.Stdout
+			cmd.Stderr = os.Stderr
+			err := cmd.Run()
+			if err != nil {
+				fmt.Printf("ERROR: %s\n", err)
+			}
+			return err
+		},
+	}
+	cli.Add(ls)
+
 	// pwd
-	pwd := &Command{
+	pwd := &tab.Command{
 		Name:        "pwd",
 		Description: "print working directory",
-		Exec: func(ctx *Context) error {
+		Exec: func(ctx *tab.Context) error {
 			fmt.Printf("%s\n", prompt.Path)
 			return nil
 		},
@@ -82,9 +112,9 @@ func main() {
 	cli.Add(pwd)
 
 	// exit
-	exit := &Command{
+	exit := &tab.Command{
 		Name: "exit",
-		Exec: func(ctx *Context) error {
+		Exec: func(ctx *tab.Context) error {
 			return io.EOF
 		},
 	}
@@ -94,7 +124,7 @@ func main() {
 
 	cli.InitTerm()
 	cli.Ctx.SetPrompt(prompt)
-	Loop(cli, quit)
+	tab.Loop(cli, quit)
 	cli.ReleaseTerm()
 	fmt.Println()
 }

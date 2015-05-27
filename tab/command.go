@@ -1,4 +1,4 @@
-package main
+package tab
 
 /*
  simple command line layer for making tab complete interactive CLIs
@@ -36,7 +36,8 @@ func NewCommandSet(name string) *RootCommand {
 	root := &RootCommand{
 		Ctx: &Context{},
 		Command: &Command{
-			Name: name,
+			Name:   name,
+			IsRoot: true,
 		},
 	}
 	return root
@@ -83,7 +84,7 @@ func (c *Command) Find(name string) ([]*Command, error) {
 // returns root command if no match
 func (c *RootCommand) FindCommand(line string) (*Command, error) {
 	if line == "" {
-		return nil, fmt.Errorf("empty command")
+		return c.Command, fmt.Errorf("empty command")
 	}
 	fields := strings.Fields(line)
 
@@ -139,6 +140,7 @@ type Command struct {
 	Name        string
 	Description string // short one line description
 	Exec        ExecuteCommand
+	IsRoot      bool
 
 	Parent *Command
 	SubCmd []*Command
@@ -159,6 +161,10 @@ type Context struct {
 	Prompt       Prompt
 	Term         *terminal.Terminal
 	RegularState *terminal.State
+}
+
+func (c *Context) Args() []string {
+	return c.args
 }
 
 func (c *Context) Arg(n int) string {

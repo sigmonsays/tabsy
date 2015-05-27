@@ -1,4 +1,4 @@
-package main
+package tab
 
 import (
 	"fmt"
@@ -101,28 +101,47 @@ Dance:
 				break Dance
 
 			} else if k.key == 0x9 { // TAB
+
+			} else if k.key == 0x9 { // TAB
+
 				res := &KeyResponse{"", 0, false}
 
+				prefix := ""
 				fields := strings.Fields(k.line)
-				prefix := fields[len(fields)-1]
+				if len(fields) > 0 {
+					if strings.HasSuffix(k.line, " ") == false {
+						prefix = fields[len(fields)-1]
+					}
+				}
 
-				cmd, err := c.FindCommand(k.line)
-				if err == nil {
+				cmd, _ := c.FindCommand(k.line)
 
-					if strings.HasPrefix(cmd.Name, prefix) && cmd.Name != prefix {
-						res.ok = true
-						p := cmd.Name[len(prefix):] + " "
-						res.newline += k.line + p
-						res.newpos += k.pos + len(p)
+				// fmt.Printf("cmd=%s prefix=%s\n", cmd.Name, prefix)
+
+				if len(prefix) > 0 && cmd.IsRoot == false && strings.HasPrefix(cmd.Name, prefix) && cmd.Name != prefix {
+					res.ok = true
+					p := cmd.Name[len(prefix):] + " "
+					res.newline += k.line + p
+					res.newpos += k.pos + len(p)
+				}
+
+				// fmt.Printf("cmd=%s fields=%s prefix=%s\n", cmd.Name, fields, prefix)
+
+				// list all sub commands
+				ls := []*Command{}
+				for _, cmd := range cmd.SubCmd {
+					if prefix == "" || strings.HasPrefix(cmd.Name, prefix) {
+						ls = append(ls, cmd)
 					}
 
-					// fmt.Printf("cmd=%s fields=%s prefix=%s\n", cmd.Name, fields, prefix)
+				}
 
-					// list all sub commands
-					ls := []string{}
-					for _, cmd := range cmd.SubCmd {
-						ls = append(ls, cmd.Name)
+				if len(ls) > 0 {
+					fmt.Println()
+					for _, c := range ls {
+						fmt.Printf("%-20s\n", c.Name)
 					}
+					fmt.Printf("\n%s%s", ctx.Prompt, k.line)
 				}
 
 				k.response <- res
