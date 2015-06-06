@@ -7,7 +7,7 @@ import (
 	"os"
 	"os/exec"
 
-	"github.com/sigmonsays/test/tab"
+	"github.com/sigmonsays/tabsy/tab"
 )
 
 type prompt struct {
