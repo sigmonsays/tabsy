@@ -57,7 +57,6 @@ func Loop(c *RootCommand, quit chan bool) error {
 	readline_err := make(chan error, 0)
 
 	ctx := c.Ctx
-	_ = ctx
 
 	c.Ctx.Term.AutoCompleteCallback = func(line string, pos int, key rune) (newLine string, newPos int, ok bool) {
 		response := make(chan *KeyResponse, 1)
