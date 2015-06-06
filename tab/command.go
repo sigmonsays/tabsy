@@ -135,6 +135,7 @@ func (c *Command) FindOne(name string) (*Command, error) {
 // search one level deep for a command
 // perform unique prefix matching
 func (c *Command) Find(name string) ([]*Command, error) {
+	name = strings.TrimRight(name, " ")
 	matches := make([]*Command, 0)
 	for _, scmd := range c.SubCmd {
 		if strings.HasPrefix(scmd.Name, name) {
