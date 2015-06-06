@@ -109,29 +109,39 @@ Dance:
 					}
 				}
 
-				cmd, _ := c.FindCommand(k.line)
+				var cmd *Command
+				cmds, _ := c.Find(k.line)
 
 				// fmt.Printf("cmd=%s prefix=%s\n", cmd.Name, prefix)
+				/*
 
-				if len(prefix) > 0 && cmd.IsRoot == false && strings.HasPrefix(cmd.Name, prefix) && cmd.Name != prefix {
-					res.ok = true
-					p := cmd.Name[len(prefix):] + " "
-					res.newline += k.line + p
-					res.newpos += k.pos + len(p)
-				}
+					if len(prefix) > 0 && cmd.IsRoot == false && strings.HasPrefix(cmd.Name, prefix) && cmd.Name != prefix {
+						res.ok = true
+						p := cmd.Name[len(prefix):] + " "
+						res.newline += k.line + p
+						res.newpos += k.pos + len(p)
+					}
+				*/
 
 				// fmt.Printf("cmd=%s fields=%s prefix=%s\n", cmd.Name, fields, prefix)
 
 				// list all sub commands
 				ls := []*Command{}
-				for _, cmd := range cmd.SubCmd {
+				for _, cmd := range cmds {
 					if prefix == "" || strings.HasPrefix(cmd.Name, prefix) {
 						ls = append(ls, cmd)
 					}
 
 				}
 
-				if len(ls) > 0 {
+				if len(ls) == 1 {
+					cmd = cmds[0]
+					res.ok = true
+					p := cmd.Name[len(prefix):] + " "
+					res.newline += k.line + p
+					res.newpos += k.pos + len(p)
+
+				} else if len(ls) > 0 {
 					fmt.Println()
 					for _, c := range ls {
 						fmt.Printf("%-20s\n", c.Name)
@@ -173,7 +183,7 @@ Dance:
 		}
 	}
 
-	fmt.Printf("Quit..\n")
+	fmt.Printf("\nQuit..\n")
 	terminal.Restore(0, c.Ctx.RegularState)
 	return nil
 }

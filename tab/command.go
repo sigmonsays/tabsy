@@ -5,6 +5,10 @@ import (
 	"strings"
 )
 
+var ErrNoSuchCommand = fmt.Errorf("no such command")
+var ErrAmbiguousCommand = fmt.Errorf("ambiguous")
+var ErrCommandNotExec = fmt.Errorf("command not executable")
+
 type Prompt interface {
 	String() string
 }
@@ -59,20 +63,24 @@ func (c *RootCommand) Dispatch(line string) error {
 		return nil
 	}
 
-	cmd, err := c.FindCommand(line)
+	var cmd *Command
+	cmds, err := c.Find(line)
 	if err != nil {
 		return err
 	}
-
-	if cmd == nil {
-		return err
+	if len(cmds) == 0 {
+		fmt.Printf("no such command\n")
+		return ErrNoSuchCommand
+	} else if len(cmds) == 1 {
+		cmd = cmds[0]
+	} else {
+		return ErrAmbiguousCommand
 	}
 
 	if cmd.Exec == nil {
-		// fmt.Printf("%s", c.Ctx.Prompt)
-		return err
+		fmt.Printf("command not executable\n")
+		return ErrCommandNotExec
 	}
-
 	fields := strings.Fields(line)
 	c.Ctx.args = fields[1:]
 	err = cmd.Exec(c.Ctx)
@@ -134,8 +142,10 @@ func (c *Command) Find(name string) ([]*Command, error) {
 		}
 	}
 	if len(matches) == 0 {
-		return nil, fmt.Errorf("no such match: %s", name)
+		return nil, ErrNoSuchCommand
 	}
 
 	return matches, nil
 }
+
+// end

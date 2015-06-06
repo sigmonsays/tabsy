@@ -140,6 +140,23 @@ func main() {
 	cli.Add(exit)
 	cli.Add(exit.Alias("quit"))
 
+	// foo1 and foo2
+	foo1 := &tab.Command{
+		Name:        "foo1",
+		Description: "print foo",
+		Exec: func(ctx *tab.Context) error {
+			fmt.Printf("foo1\n")
+			return nil
+		},
+	}
+	foo2 := foo1.Alias("foo2")
+	foo2.Exec = func(ctx *tab.Context) error {
+		fmt.Printf("foo2\n")
+		return nil
+	}
+	cli.Add(foo1)
+	cli.Add(foo2)
+
 	quit := make(chan bool, 0)
 
 	cli.InitTerm()
