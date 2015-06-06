@@ -139,7 +139,7 @@ Dance:
 				c.dbg("cmd=%s prefix=%s cmd-matches=%d ls=%d line=%q",
 					c2.Name, prefix, len(cmds), len(ls), k.line)
 
-				if len(ls) == 0 && c2 != nil {
+				if len(ls) == 0 && c2 != nil && c2.IsRoot == false {
 					// we have a command thats the exact match, lets complete the word
 					p := c2.Name[len(prefix):] + " "
 					res.ok = true
