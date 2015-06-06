@@ -10,6 +10,12 @@ import (
 	"golang.org/x/crypto/ssh/terminal"
 )
 
+const (
+	KeyTab          = 0x9
+	KeyControlC     = 0x03
+	KeyQuestionMark = 0x3f
+)
+
 func (c *RootCommand) InitTerm() error {
 	oldState, err := terminal.MakeRaw(0)
 	if err != nil {
@@ -94,23 +100,32 @@ Dance:
 
 		case k := <-cli_keypress:
 
-			if k.key == 0x03 { // ^C
+			if k.key == KeyControlC { // ^C
 				k.response <- &KeyResponse{"", 0, true}
 
-			} else if k.key == 0x9 { // TAB
+			} else if k.key == KeyTab { // TAB
 
 				res := &KeyResponse{"", 0, false}
+				trailing_space := strings.HasSuffix(k.line, " ")
 
 				prefix := ""
 				fields := strings.Fields(k.line)
 				if len(fields) > 0 {
-					if strings.HasSuffix(k.line, " ") == false {
+					if trailing_space == false {
 						prefix = fields[len(fields)-1]
 					}
 				}
 
+				c2, _ := c.FindCommand(k.line)
+
 				var cmd *Command
-				cmds, _ := c.Find(k.line)
+				var cmds []*Command
+
+				if trailing_space {
+					cmds = c2.SubCmd
+				} else {
+					cmds, _ = c2.Find(k.line)
+				}
 
 				// list all sub commands
 				ls := []*Command{}
@@ -120,6 +135,8 @@ Dance:
 					}
 
 				}
+
+				fmt.Printf("\ncmd=%s cmd=%d ls=%d line=%q\n", c2.Name, len(cmds), len(ls), k.line)
 
 				if len(ls) == 1 {
 					cmd = cmds[0]
@@ -138,7 +155,7 @@ Dance:
 
 				k.response <- res
 
-			} else if k.key == 0x3f { // ?
+			} else if k.key == KeyQuestionMark { // ?
 				cmd, err := c.FindCommand(k.line)
 				if cmd == nil {
 					cmd = c.Command

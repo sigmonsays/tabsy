@@ -8,88 +8,13 @@ import (
 var ErrNoSuchCommand = fmt.Errorf("no such command")
 var ErrAmbiguousCommand = fmt.Errorf("ambiguous")
 var ErrCommandNotExec = fmt.Errorf("command not executable")
+var ErrEmptyCommand = fmt.Errorf("empty command")
 
 type Prompt interface {
 	String() string
 }
 
 type ExecuteCommand func(*Context) error
-
-func NewCommandSet(name string) *RootCommand {
-	root := &RootCommand{
-		Ctx: &Context{},
-		Command: &Command{
-			Name:   name,
-			IsRoot: true,
-		},
-	}
-	return root
-}
-
-type RootCommand struct {
-	*Command
-	Ctx *Context
-}
-
-// find which command will be called to execute
-// returns root command if no match
-func (c *RootCommand) FindCommand(line string) (*Command, error) {
-	if line == "" {
-		return c.Command, fmt.Errorf("empty command")
-	}
-	fields := strings.Fields(line)
-
-	var ret *Command
-	var scmd *Command
-	scmd = c.Command
-	ret = scmd
-	for i := 0; i < len(fields); i++ {
-		tcmd, err := scmd.FindOne(fields[i])
-		if err != nil {
-			break
-		}
-
-		if tcmd != nil {
-			scmd = tcmd
-		}
-		ret = scmd
-	}
-
-	return ret, nil
-}
-
-func (c *RootCommand) Dispatch(line string) error {
-	if line == "" {
-		return nil
-	}
-
-	var cmd *Command
-	cmds, err := c.Find(line)
-	if err != nil {
-		return err
-	}
-	if len(cmds) == 0 {
-		fmt.Printf("no such command\n")
-		return ErrNoSuchCommand
-	} else if len(cmds) == 1 {
-		cmd = cmds[0]
-	} else {
-		return ErrAmbiguousCommand
-	}
-
-	if cmd.Exec == nil {
-		fmt.Printf("command not executable\n")
-		return ErrCommandNotExec
-	}
-	fields := strings.Fields(line)
-	c.Ctx.args = fields[1:]
-	err = cmd.Exec(c.Ctx)
-	if err != nil {
-		fmt.Printf("%s: %s", cmd.Name, err)
-	}
-
-	return err
-}
 
 type Command struct {
 	Name        string
@@ -131,7 +56,7 @@ func (c *Command) FindOne(name string) (*Command, error) {
 	return nil, fmt.Errorf("cmd=%s: no such command %q", c.Name, name)
 }
 
-// return all matching commands
+// return all matching sub commands
 // search one level deep for a command
 // perform unique prefix matching
 func (c *Command) Find(name string) ([]*Command, error) {

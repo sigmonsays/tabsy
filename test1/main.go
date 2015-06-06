@@ -41,6 +41,8 @@ func main() {
 	cli := tab.NewCommandSet("test1")
 	cli.Description = "do something useful.."
 
+	cli.OpenDebugLog("/tmp/term.log")
+
 	help := &tab.Command{
 		Name:        "help",
 		Description: "show help for commands",
