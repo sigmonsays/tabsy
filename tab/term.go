@@ -112,19 +112,6 @@ Dance:
 				var cmd *Command
 				cmds, _ := c.Find(k.line)
 
-				// fmt.Printf("cmd=%s prefix=%s\n", cmd.Name, prefix)
-				/*
-
-					if len(prefix) > 0 && cmd.IsRoot == false && strings.HasPrefix(cmd.Name, prefix) && cmd.Name != prefix {
-						res.ok = true
-						p := cmd.Name[len(prefix):] + " "
-						res.newline += k.line + p
-						res.newpos += k.pos + len(p)
-					}
-				*/
-
-				// fmt.Printf("cmd=%s fields=%s prefix=%s\n", cmd.Name, fields, prefix)
-
 				// list all sub commands
 				ls := []*Command{}
 				for _, cmd := range cmds {
