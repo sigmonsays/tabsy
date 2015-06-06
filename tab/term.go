@@ -94,13 +94,8 @@ Dance:
 
 		case k := <-cli_keypress:
 
-			if k.key == 0x03 {
-				fmt.Printf("\nQuit..\n")
-				terminal.Restore(0, c.Ctx.RegularState)
-				k.response <- &KeyResponse{"", 0, false}
-				break Dance
-
-			} else if k.key == 0x9 { // TAB
+			if k.key == 0x03 { // ^C
+				k.response <- &KeyResponse{"", 0, true}
 
 			} else if k.key == 0x9 { // TAB
 
@@ -178,6 +173,8 @@ Dance:
 		}
 	}
 
+	fmt.Printf("Quit..\n")
+	terminal.Restore(0, c.Ctx.RegularState)
 	return nil
 }
 

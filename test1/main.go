@@ -1,5 +1,24 @@
 package main
 
+/*
+ simple command line layer for making tab complete interactive CLIs
+
+ cd [path]
+ pwd
+
+ show ?
+ show object [path]
+
+ delete [path]
+ makedir [path]
+ upload [localpath] [path]
+
+ object set mtime [mtime]
+
+
+
+*/
+
 import (
 	"fmt"
 	"io"
@@ -119,6 +138,7 @@ func main() {
 		},
 	}
 	cli.Add(exit)
+	cli.Add(exit.Alias("quit"))
 
 	quit := make(chan bool, 0)
 

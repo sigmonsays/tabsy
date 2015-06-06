@@ -1,29 +1,8 @@
 package tab
 
-/*
- simple command line layer for making tab complete interactive CLIs
-
- cd [path]
- pwd
-
- show ?
- show object [path]
-
- delete [path]
- makedir [path]
- upload [localpath] [path]
-
- object set mtime [mtime]
-
-
-
-*/
-
 import (
 	"fmt"
 	"strings"
-
-	"golang.org/x/crypto/ssh/terminal"
 )
 
 type Prompt interface {
@@ -46,38 +25,6 @@ func NewCommandSet(name string) *RootCommand {
 type RootCommand struct {
 	*Command
 	Ctx *Context
-}
-
-// return single matching command if possible
-// search one level deep for a command
-// perform unique prefix matching
-func (c *Command) FindOne(name string) (*Command, error) {
-	matches, err := c.Find(name)
-	if err != nil {
-		return nil, err
-	}
-
-	if len(matches) == 1 {
-		return matches[0], nil
-	}
-	return nil, fmt.Errorf("cmd=%s: no such command %q", c.Name, name)
-}
-
-// return all matching commands
-// search one level deep for a command
-// perform unique prefix matching
-func (c *Command) Find(name string) ([]*Command, error) {
-	matches := make([]*Command, 0)
-	for _, scmd := range c.SubCmd {
-		if strings.HasPrefix(scmd.Name, name) {
-			matches = append(matches, scmd)
-		}
-	}
-	if len(matches) == 0 {
-		return nil, fmt.Errorf("no such match: %s", name)
-	}
-
-	return matches, nil
 }
 
 // find which command will be called to execute
@@ -155,26 +102,40 @@ func (c *Command) Add(cmd *Command) error {
 	return nil
 }
 
-type Context struct {
-	args []string
-
-	Prompt       Prompt
-	Term         *terminal.Terminal
-	RegularState *terminal.State
+func (c *Command) Alias(name string) *Command {
+	c2 := *c
+	c2.Name = name
+	return &c2
 }
 
-func (c *Context) Args() []string {
-	return c.args
-}
-
-func (c *Context) Arg(n int) string {
-	if n > len(c.args) {
-		return ""
+// return single matching command if possible
+// search one level deep for a command
+// perform unique prefix matching
+func (c *Command) FindOne(name string) (*Command, error) {
+	matches, err := c.Find(name)
+	if err != nil {
+		return nil, err
 	}
-	return c.args[n]
+
+	if len(matches) == 1 {
+		return matches[0], nil
+	}
+	return nil, fmt.Errorf("cmd=%s: no such command %q", c.Name, name)
 }
 
-func (c *Context) SetPrompt(prompt Prompt) {
-	c.Prompt = prompt
-	c.Term.SetPrompt(prompt.String())
+// return all matching commands
+// search one level deep for a command
+// perform unique prefix matching
+func (c *Command) Find(name string) ([]*Command, error) {
+	matches := make([]*Command, 0)
+	for _, scmd := range c.SubCmd {
+		if strings.HasPrefix(scmd.Name, name) {
+			matches = append(matches, scmd)
+		}
+	}
+	if len(matches) == 0 {
+		return nil, fmt.Errorf("no such match: %s", name)
+	}
+
+	return matches, nil
 }
