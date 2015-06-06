@@ -5,10 +5,10 @@ import (
 	"strings"
 )
 
-var ErrNoSuchCommand = fmt.Errorf("no such command")
-var ErrAmbiguousCommand = fmt.Errorf("ambiguous")
-var ErrCommandNotExec = fmt.Errorf("command not executable")
-var ErrEmptyCommand = fmt.Errorf("empty command")
+var ErrNoSuchCommand = NewError("no such command")
+var ErrAmbiguousCommand = NewError("ambiguous")
+var ErrCommandNotExec = NewError("command not executable")
+var ErrEmptyCommand = NewError("empty command")
 
 type Prompt interface {
 	String() string
@@ -68,7 +68,7 @@ func (c *Command) Find(name string) ([]*Command, error) {
 		}
 	}
 	if len(matches) == 0 {
-		return nil, ErrNoSuchCommand
+		return nil, ErrNoSuchCommand.Errorf("%s", name)
 	}
 
 	return matches, nil
