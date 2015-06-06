@@ -1,5 +1,10 @@
-tab complete cli
+tabsy is a tab complete CLI library
 
+The design of tabsy is inspired by the interface commonly seen in network gear
+
+Features
+
+- easy to construct commands and sub commands
 - customizable prompt with context concept (such as current working directory)
 - ? at any time will print context based help 
 - TAB will complete to the next word automatically
