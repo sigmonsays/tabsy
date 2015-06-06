@@ -136,12 +136,20 @@ Dance:
 
 				}
 
-				fmt.Printf("\ncmd=%s cmd=%d ls=%d line=%q\n", c2.Name, len(cmds), len(ls), k.line)
+				c.dbg("cmd=%s prefix=%s cmd-matches=%d ls=%d line=%q",
+					c2.Name, prefix, len(cmds), len(ls), k.line)
 
-				if len(ls) == 1 {
-					cmd = cmds[0]
+				if len(ls) == 0 && c2 != nil {
+					// we have a command thats the exact match, lets complete the word
+					p := c2.Name[len(prefix):] + " "
 					res.ok = true
+					res.newline += k.line + p
+					res.newpos += k.pos + len(p)
+
+				} else if len(ls) == 1 {
+					cmd = cmds[0]
 					p := cmd.Name[len(prefix):] + " "
+					res.ok = true
 					res.newline += k.line + p
 					res.newpos += k.pos + len(p)
 

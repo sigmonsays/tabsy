@@ -84,7 +84,7 @@ func (c *RootCommand) Dispatch(line string) error {
 		field := fields[i]
 		cmds, err = cmd.Find(field)
 		if err != nil {
-			c.dbg("cmd=%s find %s: %s\n", cmd.Name, field, err)
+			c.dbg("cmd=%s find %s: %s", cmd.Name, field, err)
 			break
 		}
 
