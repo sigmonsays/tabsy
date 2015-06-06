@@ -101,7 +101,7 @@ func (c *RootCommand) Dispatch(line string) error {
 	}
 
 	if cmd.Exec == nil {
-		return ErrCommandNotExec
+		return ErrCommandNotExec.Errorf("%s", cmd.Name)
 	}
 	c.Ctx.args = fields[1:]
 	err = cmd.Exec(c.Ctx)
