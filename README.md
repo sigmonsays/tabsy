@@ -4,6 +4,7 @@ The design of tabsy is inspired by the interface commonly seen in network gear
 
 Features
 
+- real time interaction
 - easy to construct commands and sub commands
 - customizable prompt with context concept (such as current working directory)
 - ? at any time will print context based help 
