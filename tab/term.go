@@ -189,7 +189,7 @@ Dance:
 				break Dance
 			}
 			if err != nil {
-				fmt.Printf("ERROR: %s\n", err)
+				fmt.Printf("%s\n", err)
 			}
 			cli_ready <- true
 		}
