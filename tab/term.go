@@ -12,7 +12,7 @@ import (
 const (
 	KeyTab          = 0x9
 	KeyControlC     = 0x03
-	KeyQuestionMark = 0x3f
+	KeyQuestionMark = 0x1f
 )
 
 func (c *RootCommand) InitTerm() error {
@@ -53,8 +53,6 @@ func Loop(c *RootCommand, quit chan bool) error {
 	cli_text := make(chan string, 0)
 	cli_keypress := make(chan *KeyPress, 0)
 	readline_err := make(chan error, 0)
-
-	ctx := c.Ctx
 
 	c.Ctx.Term.AutoCompleteCallback = func(line string, pos int, key rune) (newLine string, newPos int, ok bool) {
 		response := make(chan *KeyResponse, 1)
@@ -107,7 +105,7 @@ Dance:
 					k.response <- res
 				}
 
-			} else if k.key == KeyQuestionMark { // ?
+			} else if k.key == KeyQuestionMark { // ^?
 				cmd, err := c.FindCommand(k.line)
 				if cmd == nil {
 					cmd = c.Command
@@ -117,8 +115,16 @@ Dance:
 
 				newline := k.line
 				k.response <- &KeyResponse{newline, len(newline), true}
-				fmt.Printf("\n%s%s", ctx.Prompt, k.line)
+				fmt.Printf("\n%s%s", c.Ctx.Prompt, k.line)
+
 			} else {
+				switch true {
+				case k.key >= 'a' && k.key <= 'z':
+				case k.key >= 'A' && k.key <= 'Z':
+				case k.key >= '0' && k.key <= '9':
+				default:
+					c.dbg("key %x", k.key)
+				}
 				k.response <- &KeyResponse{"", 0, false}
 			}
 

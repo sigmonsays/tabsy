@@ -7,7 +7,7 @@ Features
 - real time interaction
 - easy to construct commands and sub commands
 - customizable prompt with context concept (such as current working directory)
-- ? at any time will print context based help 
+- Control-? at any time will print context based help 
 - TAB will complete to the next word automatically
 - execute shortest unique match command name, ie "q" will execute "quit" if no other command starts with "q"
 

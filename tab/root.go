@@ -96,8 +96,11 @@ func (c *RootCommand) Dispatch(line string) error {
 		}
 	}
 
-	if cmd == nil && err != nil {
+	if err != nil || cmd == nil {
 		return err
+	}
+	if cmd.IsRoot {
+		return ErrNoSuchCommand.Errorf("%s", line)
 	}
 
 	if cmd.Exec == nil {

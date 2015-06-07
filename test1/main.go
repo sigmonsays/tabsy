@@ -113,6 +113,16 @@ func main() {
 	}
 	cli.Add(cd)
 
+	echo := &tab.Command{
+		Name:        "echo",
+		Description: "echo",
+		Exec: func(ctx *tab.Context) error {
+			fmt.Printf("%s\n", ctx.Args())
+			return nil
+		},
+	}
+	cli.Add(echo)
+
 	// ls
 	ls := &tab.Command{
 		Name:        "ls",
