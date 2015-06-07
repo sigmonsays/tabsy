@@ -103,6 +103,7 @@ Dance:
 				if res == nil {
 					k.response <- &KeyResponse{"", 0, false}
 				} else {
+					c.dbg("complete line=%q ok=%v newpos=%d newline=%s", k.line, res.ok, res.newpos, res.newline)
 					k.response <- res
 				}
 

@@ -48,10 +48,10 @@ func tabComplete(c *RootCommand, k *KeyPress) (*KeyResponse, error) {
 	plen := len(prefix)
 	if len(ls) > 1 {
 		base := ls[0].Name
-		for i := plen; i < len(base); i++ {
+		for i := plen; i < len(base)-1; i++ {
 			matched := true
 			for _, c3 := range ls {
-				if c3.Name[i] != base[i] {
+				if i > len(c3.Name)-1 || c3.Name[i] != base[i] {
 					matched = false
 					break
 				}
@@ -62,15 +62,17 @@ func tabComplete(c *RootCommand, k *KeyPress) (*KeyResponse, error) {
 		}
 	}
 
-	c.dbg("tabcomplete cmd=%s prefix=%s common=%s cmd-matches=%d ls=%d line=%q",
-		c2.Name, prefix, common, len(cmds), len(ls), k.line)
+	c.dbg("tabcomplete cmd=%s prefix=%s common=%s cmd-matches=%d ls=%d line=%q trailing-space=%v",
+		c2.Name, prefix, common, len(cmds), len(ls), k.line, trailing_space)
 
 	if len(ls) == 0 && c2 != nil && c2.IsRoot == false {
 		// we have a command thats the exact match, lets complete the word
-		p := c2.Name[len(prefix):] + " "
-		res.ok = true
-		res.newline += k.line + p
-		res.newpos += k.pos + len(p)
+		if trailing_space == false {
+			p := c2.Name[len(prefix):] + " "
+			res.ok = true
+			res.newline += k.line + p
+			res.newpos += k.pos + len(p)
+		}
 
 	} else if len(ls) == 1 {
 		cmd = cmds[0]
