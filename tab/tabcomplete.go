@@ -35,17 +35,35 @@ func tabComplete(c *RootCommand, k *KeyPress) (*KeyResponse, error) {
 		cmds, _ = c2.Find(k.line)
 	}
 
-	// list all sub commands
+	// sub commands that match
 	ls := []*Command{}
 	for _, cmd := range cmds {
-		if prefix == "" || strings.HasPrefix(cmd.Name, prefix) {
+		if strings.HasPrefix(cmd.Name, prefix) {
 			ls = append(ls, cmd)
 		}
-
 	}
 
-	c.dbg("tabcomplete cmd=%s prefix=%s cmd-matches=%d ls=%d line=%q",
-		c2.Name, prefix, len(cmds), len(ls), k.line)
+	// complete common prefix
+	common := ""
+	plen := len(prefix)
+	if len(ls) > 1 {
+		base := ls[0].Name
+		for i := plen; i < len(base); i++ {
+			matched := true
+			for _, c3 := range ls {
+				if c3.Name[i] != base[i] {
+					matched = false
+					break
+				}
+			}
+			if matched {
+				common += string(base[i])
+			}
+		}
+	}
+
+	c.dbg("tabcomplete cmd=%s prefix=%s common=%s cmd-matches=%d ls=%d line=%q",
+		c2.Name, prefix, common, len(cmds), len(ls), k.line)
 
 	if len(ls) == 0 && c2 != nil && c2.IsRoot == false {
 		// we have a command thats the exact match, lets complete the word
@@ -62,6 +80,11 @@ func tabComplete(c *RootCommand, k *KeyPress) (*KeyResponse, error) {
 		res.newpos += k.pos + len(p)
 
 	} else if len(ls) > 0 {
+		if len(common) > 0 {
+			res.ok = true
+			res.newline += k.line + common
+			res.newpos += k.pos + len(common)
+		}
 		fmt.Println()
 		for _, c := range ls {
 			fmt.Printf("%-20s\n", c.Name)
