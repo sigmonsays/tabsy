@@ -1,10 +1,13 @@
 package tab
 
 import (
+	"fmt"
+	"strings"
 	"testing"
 )
 
 var foo_called bool
+var foo_args string
 var bar_called bool
 
 func TestDispatch(t *testing.T) {
@@ -23,7 +26,14 @@ func TestDispatch(t *testing.T) {
 		t.Errorf("bar was not called")
 	}
 
-	//
+	// arguments are properly parsed
+	cli.Dispatch("foo baz boo")
+	expected := "baz boo"
+	if foo_args != expected {
+		fmt.Printf("foo blah args -- %q\n", foo_args)
+		t.Errorf("bad arguments got %s, expected %s", foo_args, expected)
+	}
+
 }
 
 func build_cli() *RootCommand {
@@ -37,6 +47,7 @@ func build_cli() *RootCommand {
 		Description: "foo",
 		Exec: func(ctx *Context) error {
 			foo_called = true
+			foo_args = strings.Join(ctx.Args(), " ")
 			return nil
 		},
 	}
