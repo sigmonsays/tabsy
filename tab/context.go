@@ -16,11 +16,14 @@ func (c *Context) Args() []string {
 	return c.args
 }
 
-func (c *Context) Arg(n int) string {
-	if n > len(c.args) {
-		return ""
+func (c *Context) HasArg(n int) bool {
+	return n < len(c.args)-1
+}
+func (c *Context) Arg(n int) (arg string) {
+	if c.HasArg(n) {
+		arg = c.args[n]
 	}
-	return c.args[n]
+	return
 }
 
 func (c *Context) SetPrompt(prompt Prompt) {

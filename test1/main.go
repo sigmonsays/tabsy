@@ -38,8 +38,18 @@ func (p *prompt) String() string {
 }
 
 func main() {
+
 	cli := tab.NewCommandSet("test1")
 	cli.Description = "do something useful.."
+
+	/*
+		defer func() {
+			if r := recover(); r != nil {
+				fmt.Println("Recovered in f", r)
+				cli.ReleaseTerm()
+			}
+		}()
+	*/
 
 	cli.OpenDebugLog("/tmp/term.log")
 
