@@ -95,7 +95,8 @@ func (c *RootCommand) Dispatch(line string) error {
 			err = ErrAmbiguousCommand
 		}
 	}
-	if err != nil {
+
+	if cmd == nil && err != nil {
 		return err
 	}
 
