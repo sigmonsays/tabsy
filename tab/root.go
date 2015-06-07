@@ -42,7 +42,7 @@ func (c *RootCommand) dbg(s string, args ...interface{}) {
 }
 
 // find which command will be called to execute given a full text
-// returns root command if no match
+// returns root command if no match (should it?)
 func (c *RootCommand) FindCommand(line string) (*Command, error) {
 	if line == "" {
 		return c.Command, ErrEmptyCommand
@@ -52,7 +52,6 @@ func (c *RootCommand) FindCommand(line string) (*Command, error) {
 	var ret *Command
 	var scmd *Command
 	scmd = c.Command
-	ret = scmd
 	for i := 0; i < len(fields); i++ {
 		tcmd, err := scmd.FindOne(fields[i])
 		if err != nil {

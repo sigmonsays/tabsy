@@ -24,7 +24,6 @@ func (c *RootCommand) InitTerm() error {
 	c.Ctx.RegularState = oldState
 
 	prompt := "> "
-	fmt.Printf("starting..\n")
 	t := terminal.NewTerminal(os.Stdin, prompt)
 	c.Ctx.Term = t
 	return nil
@@ -80,8 +79,6 @@ func Loop(c *RootCommand, quit chan bool) error {
 			text, err := c.Ctx.Term.ReadLine()
 			if err == io.EOF {
 				// Quit without error on Ctrl^D
-				fmt.Println()
-				fmt.Printf("EOF\n")
 				quit <- true
 			}
 			if err != nil {
@@ -194,7 +191,6 @@ Dance:
 		}
 	}
 
-	fmt.Printf("\nQuit..\n")
 	terminal.Restore(0, c.Ctx.RegularState)
 	return nil
 }
