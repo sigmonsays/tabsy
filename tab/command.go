@@ -9,6 +9,7 @@ var ErrNoSuchCommand = NewError("no such command")
 var ErrAmbiguousCommand = NewError("ambiguous")
 var ErrCommandNotExec = NewError("command not executable")
 var ErrEmptyCommand = NewError("empty command")
+var ErrNoSubCommand = NewError("no sub command")
 
 type Prompt interface {
 	String() string
@@ -41,6 +42,27 @@ func (c *Command) Alias(name string) *Command {
 	return &c2
 }
 
+// return all matching sub commands
+// search one level deep for a command
+// perform unique prefix matching
+func (c *Command) Find(name string) ([]*Command, error) {
+	name = strings.TrimRight(name, " ")
+	matches := make([]*Command, 0)
+	if c.SubCmd == nil {
+		return nil, ErrNoSubCommand
+	}
+	for _, scmd := range c.SubCmd {
+		if strings.HasPrefix(scmd.Name, name) {
+			matches = append(matches, scmd)
+		}
+	}
+	if len(matches) == 0 {
+		return nil, ErrNoSuchCommand.Errorf("%s", name)
+	}
+
+	return matches, nil
+}
+
 // return single matching command if possible
 // search one level deep for a command
 // perform unique prefix matching
@@ -54,24 +76,6 @@ func (c *Command) FindOne(name string) (*Command, error) {
 		return matches[0], nil
 	}
 	return nil, fmt.Errorf("cmd=%s: no such command %q", c.Name, name)
-}
-
-// return all matching sub commands
-// search one level deep for a command
-// perform unique prefix matching
-func (c *Command) Find(name string) ([]*Command, error) {
-	name = strings.TrimRight(name, " ")
-	matches := make([]*Command, 0)
-	for _, scmd := range c.SubCmd {
-		if strings.HasPrefix(scmd.Name, name) {
-			matches = append(matches, scmd)
-		}
-	}
-	if len(matches) == 0 {
-		return nil, ErrNoSuchCommand.Errorf("%s", name)
-	}
-
-	return matches, nil
 }
 
 // end
