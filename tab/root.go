@@ -1,9 +1,10 @@
 package tab
 
 import (
-	"fmt"
-	"os"
+	"log"
 	"strings"
+
+	"github.com/chzyer/readline"
 )
 
 func NewCommandSet(name string) *RootCommand {
@@ -20,25 +21,88 @@ func NewCommandSet(name string) *RootCommand {
 type RootCommand struct {
 	*Command
 	Ctx *Context
-
-	dlog *os.File
 }
 
-func (c *RootCommand) OpenDebugLog(path string) error {
-	f, err := os.Create(path)
+func buildCompletion(root *RootCommand, cmdline string, pclist []*readline.PrefixCompleter, pc *readline.PrefixCompleter, c *Command) []*readline.PrefixCompleter {
+	if cmdline != "" {
+		cmdline += " "
+	}
+	cmdline += c.Name
+
+	root.dbg("complete cmdline [%s] pclist %d: cmd %s", cmdline, len(pclist), c.Name)
+
+	if pc == nil {
+		p := &readline.PrefixCompleter{
+			Name:     []rune(strings.Trim(cmdline, " ") + " "),
+			Children: make([]*readline.PrefixCompleter, 0),
+		}
+		pclist = append(pclist, p)
+		pc = p
+	}
+
+	for _, s := range c.SubCmd {
+
+		p2 := &readline.PrefixCompleter{
+			Name:     []rune(strings.Trim(s.Name, " ") + " "),
+			Children: make([]*readline.PrefixCompleter, 0),
+		}
+
+		pc.Children = append(pc.Children, p2)
+
+		root.dbg("scmd %s cmdline %s", s.Name, cmdline)
+		pclist = buildCompletion(root, cmdline, pclist, p2, s)
+
+	}
+
+	return pclist
+}
+
+func (c *RootCommand) InitTerm() error {
+
+	pc := make([]*readline.PrefixCompleter, 0)
+
+	for _, s := range c.SubCmd {
+		pc = buildCompletion(c, "", pc, nil, s)
+	}
+
+	completer := readline.NewPrefixCompleter(pc...)
+
+	// prompt := "\033[31m»\033[0m "
+	prompt := "> "
+
+	rlconf := &readline.Config{
+		Prompt:       prompt,
+		HistoryFile:  "/tmp/readline.tmp",
+		AutoComplete: completer,
+	}
+	c.dbg("readline init")
+
+	rl, err := readline.NewEx(rlconf)
 	if err != nil {
 		return err
 	}
-	c.dlog = f
+
+	log.SetOutput(rl.Stderr())
+
+	c.Ctx.rl = rl
 	return nil
 }
 
+func (c *RootCommand) ReleaseTerm() error {
+	c.dbg("release term")
+	c.Ctx.rl.Close()
+	return nil
+}
+
+func (r *RootCommand) Context() *Context {
+	return r.Ctx
+}
+
 func (c *RootCommand) dbg(s string, args ...interface{}) {
-	if c.dlog == nil {
+	if c.Ctx.dlog == nil {
 		return
 	}
-	line := fmt.Sprintf(s, args...)
-	fmt.Fprintf(c.dlog, line+"\n")
+	c.Ctx.Dbg(s, args...)
 }
 
 // find which command will be called to execute given a full text
@@ -71,6 +135,7 @@ func (c *RootCommand) Dispatch(line string) error {
 	if line == "" {
 		return nil
 	}
+	c.dbg("dispatch %q", line)
 	// trailing_space := strings.HasSuffix(line, " ")
 
 	var err error
