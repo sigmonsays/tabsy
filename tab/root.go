@@ -68,7 +68,7 @@ func (c *RootCommand) InitTerm() error {
 	completer := readline.NewPrefixCompleter(pc...)
 
 	// prompt := "\033[31m»\033[0m "
-	prompt := "> "
+	prompt := "(init)> "
 
 	rlconf := &readline.Config{
 		Prompt:       prompt,

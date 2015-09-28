@@ -31,6 +31,8 @@ func (c *Context) Arg(n int) (arg string) {
 
 func (c *Context) SetPrompt(prompt Prompt) {
 	c.Prompt = prompt
+
+	c.rl.SetPrompt(c.Prompt.String())
 }
 
 func (c *Context) CloseDebugLog() {
