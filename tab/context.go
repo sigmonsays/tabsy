@@ -20,7 +20,7 @@ func (c *Context) Args() []string {
 }
 
 func (c *Context) HasArg(n int) bool {
-	return n < len(c.args)-1
+	return n <= len(c.args)-1
 }
 func (c *Context) Arg(n int) (arg string) {
 	if c.HasArg(n) {
