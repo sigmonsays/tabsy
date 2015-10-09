@@ -46,7 +46,6 @@ func (c *Command) Alias(name string) *Command {
 // search one level deep for a command
 // perform unique prefix matching
 func (c *Command) Find(name string) ([]*Command, error) {
-	fmt.Printf("find name=%s\n", name)
 	name = strings.TrimRight(name, " ")
 	matches := make([]*Command, 0)
 	if c.SubCmd == nil {

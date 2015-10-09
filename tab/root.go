@@ -201,8 +201,8 @@ func (c *RootCommand) Dispatch(line string) error {
 		c.dbg("command not executable: %s", cmd.Name)
 		return c.withError(ErrCommandNotExec.Errorf("%s", cmd.Name))
 	}
-	c.dbg("executing %s", cmd.Name)
 	c.Ctx.args = fields[1:]
+	c.dbg("executing %s (args %s)", cmd.Name, c.Ctx.args)
 	err = cmd.Exec(c.Ctx)
 	if err != nil {
 		c.dbg("%s: %s", cmd.Name, err)
