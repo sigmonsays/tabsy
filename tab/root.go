@@ -162,6 +162,7 @@ func (c *RootCommand) Dispatch(line string) error {
 	var cmds []*Command
 	cmd = c.Command
 	fields := strings.Fields(line)
+	c.dbg("starting search at root cmd=%s", c.Name)
 	for i := 0; i < len(fields); i++ {
 
 		field := fields[i]
@@ -172,24 +173,35 @@ func (c *RootCommand) Dispatch(line string) error {
 		}
 
 		if len(cmds) == 0 {
-			err = ErrNoSuchCommand
+			break
 		} else if len(cmds) == 1 {
 			cmd = cmds[0]
 		} else {
-			err = ErrAmbiguousCommand
+			choices := make([]string, 0)
+			for _, c := range cmds {
+				choices = append(choices, c.Name)
+			}
+			err = ErrAmbiguousCommand.Errorf("%s", choices)
 		}
 	}
 
-	if err != nil || cmd == nil {
-		return c.withError(err)
-	}
+	/*
+
+		if err != nil || cmd == nil {
+			return c.withError(err)
+		}
+	*/
+
 	if cmd.IsRoot {
+		c.dbg("no such top level command: %s", fields[0])
 		return c.withError(ErrNoSuchCommand.Errorf("%s", line))
 	}
 
 	if cmd.Exec == nil {
+		c.dbg("command not executable: %s", cmd.Name)
 		return c.withError(ErrCommandNotExec.Errorf("%s", cmd.Name))
 	}
+	c.dbg("executing %s", cmd.Name)
 	c.Ctx.args = fields[1:]
 	err = cmd.Exec(c.Ctx)
 	if err != nil {
