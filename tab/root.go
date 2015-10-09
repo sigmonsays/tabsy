@@ -18,9 +18,12 @@ func NewCommandSet(name string) *RootCommand {
 	return root
 }
 
+type ErrorHandler func(err error)
+
 type RootCommand struct {
 	*Command
-	Ctx *Context
+	Ctx          *Context
+	ErrorHandler ErrorHandler
 }
 
 func buildCompletion(root *RootCommand, cmdline string, pclist []*readline.PrefixCompleter, pc *readline.PrefixCompleter, c *Command) []*readline.PrefixCompleter {
@@ -131,6 +134,22 @@ func (c *RootCommand) FindCommand(line string) (*Command, error) {
 	return ret, nil
 }
 
+func (c *RootCommand) OnError(fn ErrorHandler) {
+	c.ErrorHandler = fn
+}
+
+// calls the error handler with an error
+func (c *RootCommand) withError(err error) error {
+	if err == nil {
+		return err
+	}
+
+	if c.ErrorHandler != nil {
+		c.ErrorHandler(err)
+	}
+	return err
+}
+
 func (c *RootCommand) Dispatch(line string) error {
 	if line == "" {
 		return nil
@@ -162,19 +181,20 @@ func (c *RootCommand) Dispatch(line string) error {
 	}
 
 	if err != nil || cmd == nil {
-		return err
+		return c.withError(err)
 	}
 	if cmd.IsRoot {
-		return ErrNoSuchCommand.Errorf("%s", line)
+		return c.withError(ErrNoSuchCommand.Errorf("%s", line))
 	}
 
 	if cmd.Exec == nil {
-		return ErrCommandNotExec.Errorf("%s", cmd.Name)
+		return c.withError(ErrCommandNotExec.Errorf("%s", cmd.Name))
 	}
 	c.Ctx.args = fields[1:]
 	err = cmd.Exec(c.Ctx)
 	if err != nil {
 		c.dbg("%s: %s", cmd.Name, err)
+		return c.withError(err)
 	}
 
 	return err
