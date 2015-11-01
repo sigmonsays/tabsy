@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strings"
 	"text/tabwriter"
 )
 
@@ -20,6 +21,13 @@ func ShowHelp(root *RootCommand, cmd *Command, find_error error) {
 	}
 	fmt.Fprintln(w)
 	w.Flush()
+}
+
+func ExecuteLine(c *RootCommand, line []string) error {
+
+	text := strings.Join(line, " ")
+
+	return c.Dispatch(text)
 }
 
 // send on quit channel to terminate loop
