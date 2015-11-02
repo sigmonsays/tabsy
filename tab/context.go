@@ -3,14 +3,31 @@ package tab
 import (
 	"fmt"
 	"os"
-
-	"github.com/chzyer/readline"
 )
+
+type CommandContext interface {
+	Dbg(s string, args ...interface{})
+
+	SetPrompt(prompt Prompt)
+
+	Args() []string
+	HasArg(n int) bool
+	SetArgs(args []string)
+
+	Readline() (string, error)
+}
+
+func NewContext(rl Readliner) *Context {
+	ctx := &Context{
+		rl: rl,
+	}
+	return ctx
+}
 
 type Context struct {
 	args []string
 	dlog *os.File
-	rl   *readline.Instance
+	rl   Readliner
 
 	Prompt Prompt
 }
@@ -28,11 +45,22 @@ func (c *Context) Arg(n int) (arg string) {
 	}
 	return
 }
+func (c *Context) SetArgs(args []string) {
+	c.args = args
+}
+
+func (c *Context) Readline() (string, error) {
+	if c.rl == nil {
+		return "", fmt.Errorf("init error: readline is nul")
+	}
+	return c.rl.Readline()
+}
 
 func (c *Context) SetPrompt(prompt Prompt) {
 	c.Prompt = prompt
-
-	c.rl.SetPrompt(c.Prompt.String())
+	if c.rl != nil {
+		c.rl.SetPrompt(c.Prompt)
+	}
 }
 
 func (c *Context) CloseDebugLog() {
