@@ -33,15 +33,13 @@ func ExecuteLine(c *RootCommand, line []string) error {
 // send on quit channel to terminate loop
 func Loop(c *RootCommand, quit func()) error {
 
-	rl := c.Ctx.rl
-
 	c.dbg("loop start")
 
 Dance:
 	for {
 		c.dbg("readline wait")
 
-		text, err := rl.Readline()
+		text, err := c.Ctx.Readline()
 		if err == io.EOF {
 			// Quit without error on Ctrl^D
 			c.dbg("error %s", err)
