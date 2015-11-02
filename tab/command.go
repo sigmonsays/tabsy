@@ -39,6 +39,7 @@ func (c *Command) Add(cmd *Command) error {
 func (c *Command) Alias(name string) *Command {
 	c2 := *c
 	c2.Name = name
+	c2.Description = fmt.Sprintf("alias for %s", c.Name)
 	return &c2
 }
 

@@ -172,6 +172,8 @@ func (c *RootCommand) Dispatch(line string) error {
 			break
 		}
 
+		c.dbg("find field=%s returned %d entries", field, len(cmds))
+
 		if len(cmds) == 0 {
 			break
 		} else if len(cmds) == 1 {
@@ -182,15 +184,25 @@ func (c *RootCommand) Dispatch(line string) error {
 				choices = append(choices, c.Name)
 			}
 			err = ErrAmbiguousCommand.Errorf("%s", choices)
+			c.dbg("command is ambiguous")
+
+			// see if we have an exact match since Find will return based on prefix
+			for _, c2 := range cmds {
+				if c2.Name == field {
+					cmd = c2
+					c.dbg("exact match for command %s", field)
+					err = nil
+					break
+				}
+			}
+			break
 		}
 	}
 
-	/*
-
-		if err != nil || cmd == nil {
-			return c.withError(err)
-		}
-	*/
+	// command can be ambiguous
+	if err != nil || cmd == nil {
+		return c.withError(err)
+	}
 
 	if cmd.IsRoot {
 		c.dbg("no such top level command: %s", fields[0])
