@@ -15,7 +15,7 @@ type Prompt interface {
 	String() string
 }
 
-type ExecuteCommand func(*Context) error
+type ExecuteCommand func(CommandContext) error
 
 type Command struct {
 	Name        string
