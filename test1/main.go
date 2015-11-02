@@ -42,21 +42,10 @@ func main() {
 	cli := tab.NewCommandSet("test1")
 	cli.Description = "do something useful.."
 
-	/*
-		defer func() {
-			if r := recover(); r != nil {
-				fmt.Println("Recovered in f", r)
-				cli.ReleaseTerm()
-			}
-		}()
-	*/
-
-	cli.OpenDebugLog("/tmp/term.log")
-
 	help := &tab.Command{
 		Name:        "help",
 		Description: "show help for commands",
-		Exec: func(ctx *tab.Context) error {
+		Exec: func(ctx tab.CommandContext) error {
 			return nil
 		},
 	}
@@ -72,7 +61,7 @@ func main() {
 	profiles := &tab.Command{
 		Name:        "profiles",
 		Description: "show connection profiles",
-		Exec: func(ctx *tab.Context) error {
+		Exec: func(ctx tab.CommandContext) error {
 			fmt.Printf("profiles..\n")
 			return nil
 		},
@@ -83,7 +72,7 @@ func main() {
 	cpu := &tab.Command{
 		Name:        "cpu",
 		Description: "cpu utilization",
-		Exec: func(ctx *tab.Context) error {
+		Exec: func(ctx tab.CommandContext) error {
 			buf, err := ioutil.ReadFile("/proc/loadavg")
 			if err != nil {
 				return err
@@ -102,10 +91,9 @@ func main() {
 	cd := &tab.Command{
 		Name:        "cd",
 		Description: "change current directory",
-		Exec: func(ctx *tab.Context) error {
+		Exec: func(ctx tab.CommandContext) error {
 			path := ctx.Arg(0)
 			prompt.Path = path
-			ctx.SetPrompt(prompt)
 			fmt.Printf("cd %s\n", prompt.Path)
 
 			return nil
@@ -116,7 +104,7 @@ func main() {
 	echo := &tab.Command{
 		Name:        "echo",
 		Description: "echo",
-		Exec: func(ctx *tab.Context) error {
+		Exec: func(ctx tab.CommandContext) error {
 			fmt.Printf("%s\n", ctx.Args())
 			return nil
 		},
@@ -127,7 +115,7 @@ func main() {
 	ls := &tab.Command{
 		Name:        "ls",
 		Description: "list files",
-		Exec: func(ctx *tab.Context) error {
+		Exec: func(ctx tab.CommandContext) error {
 			args := ctx.Args()
 			cmd := exec.Command("ls", args...)
 			cmd.Stdout = os.Stdout
@@ -145,7 +133,7 @@ func main() {
 	pwd := &tab.Command{
 		Name:        "pwd",
 		Description: "print working directory",
-		Exec: func(ctx *tab.Context) error {
+		Exec: func(ctx tab.CommandContext) error {
 			fmt.Printf("%s\n", prompt.Path)
 			return nil
 		},
@@ -155,7 +143,7 @@ func main() {
 	// exit
 	exit := &tab.Command{
 		Name: "exit",
-		Exec: func(ctx *tab.Context) error {
+		Exec: func(ctx tab.CommandContext) error {
 			return io.EOF
 		},
 	}
@@ -166,24 +154,21 @@ func main() {
 	foo1 := &tab.Command{
 		Name:        "foo1",
 		Description: "print foo",
-		Exec: func(ctx *tab.Context) error {
+		Exec: func(ctx tab.CommandContext) error {
 			fmt.Printf("foo1\n")
 			return nil
 		},
 	}
 	foo2 := foo1.Alias("foo2")
-	foo2.Exec = func(ctx *tab.Context) error {
+	foo2.Exec = func(ctx tab.CommandContext) error {
 		fmt.Printf("foo2\n")
 		return nil
 	}
 	cli.Add(foo1)
 	cli.Add(foo2)
 
-	quit := make(chan bool, 0)
-
 	cli.InitTerm()
-	cli.Ctx.SetPrompt(prompt)
-	tab.Loop(cli, quit)
+	tab.Loop(cli, nil)
 	cli.ReleaseTerm()
 	fmt.Println()
 }

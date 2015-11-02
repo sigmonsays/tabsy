@@ -8,8 +8,7 @@ import (
 type CommandContext interface {
 	Dbg(s string, args ...interface{})
 
-	SetPrompt(prompt Prompt)
-
+	Arg(int) string
 	Args() []string
 	HasArg(n int) bool
 	SetArgs(args []string)
@@ -25,10 +24,9 @@ func NewContext(rl Readliner) *Context {
 }
 
 type Context struct {
-	args []string
-	dlog *os.File
-	rl   Readliner
-
+	args   []string
+	dlog   *os.File
+	rl     Readliner
 	Prompt Prompt
 }
 
@@ -51,16 +49,15 @@ func (c *Context) SetArgs(args []string) {
 
 func (c *Context) Readline() (string, error) {
 	if c.rl == nil {
-		return "", fmt.Errorf("init error: readline is nul")
+		panic("readline is nil")
 	}
 	return c.rl.Readline()
 }
 
-func (c *Context) SetPrompt(prompt Prompt) {
+func (c *Context) WithPrompt(prompt Prompt) *Context {
 	c.Prompt = prompt
-	if c.rl != nil {
-		c.rl.SetPrompt(c.Prompt)
-	}
+	// c.rl.SetPrompt(c.Prompt)
+	return c
 }
 
 func (c *Context) CloseDebugLog() {

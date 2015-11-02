@@ -1,15 +1,12 @@
 package tab
 
 import (
-	"log"
+	"fmt"
 	"strings"
-
-	"github.com/chzyer/readline"
 )
 
 func NewCommandSet(name string) *RootCommand {
 	root := &RootCommand{
-		Ctx: &Context{},
 		Command: &Command{
 			Name:   name,
 			IsRoot: true,
@@ -22,87 +19,56 @@ type ErrorHandler func(err error)
 
 type RootCommand struct {
 	*Command
-	Ctx          *Context
+	Ctx          CommandContext
+	Readline     Readliner
 	ErrorHandler ErrorHandler
 }
 
-func buildCompletion(root *RootCommand, cmdline string, pclist []*readline.PrefixCompleter, pc *readline.PrefixCompleter, c *Command) []*readline.PrefixCompleter {
-	if cmdline != "" {
-		cmdline += " "
-	}
-	cmdline += c.Name
+func (c *RootCommand) WithReadline(r Readliner) *RootCommand {
+	c.Readline = r
+	return c
+}
 
-	root.dbg("complete cmdline [%s] pclist %d: cmd %s", cmdline, len(pclist), c.Name)
-
-	if pc == nil {
-		p := &readline.PrefixCompleter{
-			Name:     []rune(strings.Trim(cmdline, " ") + " "),
-			Children: make([]*readline.PrefixCompleter, 0),
-		}
-		pclist = append(pclist, p)
-		pc = p
-	}
-
-	for _, s := range c.SubCmd {
-
-		p2 := &readline.PrefixCompleter{
-			Name:     []rune(strings.Trim(s.Name, " ") + " "),
-			Children: make([]*readline.PrefixCompleter, 0),
-		}
-
-		pc.Children = append(pc.Children, p2)
-
-		root.dbg("scmd %s cmdline %s", s.Name, cmdline)
-		pclist = buildCompletion(root, cmdline, pclist, p2, s)
-
-	}
-
-	return pclist
+func (c *RootCommand) UseContext(ctx CommandContext) {
+	c.Ctx = ctx
 }
 
 func (c *RootCommand) InitTerm() error {
 
-	pc := make([]*readline.PrefixCompleter, 0)
+	// setup a buncha defaults if they dont configure things....
 
-	for _, s := range c.SubCmd {
-		pc = buildCompletion(c, "", pc, nil, s)
+	if c.Readline == nil {
+		rl, err := NewReadline(c)
+		if err != nil {
+			return err
+		}
+		c.Readline = rl
 	}
 
-	completer := readline.NewPrefixCompleter(pc...)
-
-	// prompt := "\033[31m»\033[0m "
-	prompt := "(init)> "
-
-	rlconf := &readline.Config{
-		Prompt:       prompt,
-		HistoryFile:  "/tmp/readline.tmp",
-		AutoComplete: completer,
-	}
-	c.dbg("readline init")
-
-	rl, err := readline.NewEx(rlconf)
-	if err != nil {
-		return err
+	if c.Ctx == nil {
+		c.Ctx = NewContext(c.Readline)
 	}
 
-	log.SetOutput(rl.Stderr())
-
-	c.Ctx.rl = rl
 	return nil
 }
 
 func (c *RootCommand) ReleaseTerm() error {
 	c.dbg("release term")
-	c.Ctx.rl.Close()
+	c.Readline.Release()
 	return nil
 }
 
-func (r *RootCommand) Context() *Context {
+func (r *RootCommand) Context() CommandContext {
 	return r.Ctx
 }
 
 func (c *RootCommand) dbg(s string, args ...interface{}) {
-	if c.Ctx.dlog == nil {
+	if c.Ctx == nil {
+		fmt.Printf("[init] "+s+"\n", args...)
+		return
+	}
+	if c.Ctx.Dbg == nil {
+		fmt.Printf("[dbg] "+s+"\n", args...)
 		return
 	}
 	c.Ctx.Dbg(s, args...)
@@ -213,8 +179,8 @@ func (c *RootCommand) Dispatch(line string) error {
 		c.dbg("command not executable: %s", cmd.Name)
 		return c.withError(ErrCommandNotExec.Errorf("%s", cmd.Name))
 	}
-	c.Ctx.args = fields[1:]
-	c.dbg("executing %s (args %s)", cmd.Name, c.Ctx.args)
+	c.Ctx.SetArgs(fields[1:])
+	c.dbg("executing %s (args %s)", cmd.Name, fields[1:])
 	err = cmd.Exec(c.Ctx)
 	if err != nil {
 		c.dbg("%s: %s", cmd.Name, err)

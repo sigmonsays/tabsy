@@ -49,6 +49,7 @@ Dance:
 			if quit != nil {
 				quit()
 			}
+			break
 		}
 		c.dbg("text %q", text)
 		err = c.Dispatch(text)
