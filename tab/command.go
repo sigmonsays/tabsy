@@ -23,6 +23,8 @@ type Command struct {
 	Exec        ExecuteCommand
 	IsRoot      bool
 
+	Before ExecuteCommand
+
 	Parent *Command
 	SubCmd []*Command
 }

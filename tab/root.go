@@ -64,7 +64,7 @@ func (r *RootCommand) Context() CommandContext {
 
 func (c *RootCommand) dbg(s string, args ...interface{}) {
 	if c.Ctx == nil {
-		fmt.Printf("[init] "+s+"\n", args...)
+		fmt.Printf("[dbg] "+s+"\n", args...)
 		return
 	}
 	if c.Ctx.Dbg == nil {
@@ -165,6 +165,17 @@ func (c *RootCommand) Dispatch(line string) error {
 		}
 	}
 
+	// before
+	if cmd != nil && cmd.Before != nil {
+		c.Ctx.SetArgs(fields)
+		c.dbg("executing Before func %s (args %s)", cmd.Name, fields)
+		err = cmd.Before(c.Ctx)
+		if err != nil {
+			c.dbg("cmd=%s Before returned error: %s", cmd.Name, err)
+			return c.withError(err)
+		}
+	}
+
 	// command can be ambiguous
 	if err != nil || cmd == nil {
 		return c.withError(err)
@@ -181,6 +192,7 @@ func (c *RootCommand) Dispatch(line string) error {
 	}
 	c.Ctx.SetArgs(fields[1:])
 	c.dbg("executing %s (args %s)", cmd.Name, fields[1:])
+
 	err = cmd.Exec(c.Ctx)
 	if err != nil {
 		c.dbg("%s: %s", cmd.Name, err)
